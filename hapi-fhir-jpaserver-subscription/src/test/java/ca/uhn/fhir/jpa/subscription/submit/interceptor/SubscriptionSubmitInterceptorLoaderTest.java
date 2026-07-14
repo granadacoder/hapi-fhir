@@ -21,7 +21,7 @@ import org.hl7.fhir.dstu2.model.Subscription;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
@@ -43,7 +43,7 @@ public class SubscriptionSubmitInterceptorLoaderTest {
 	@Autowired
 	private SubscriptionMatcherInterceptor mySubscriptionMatcherInterceptor;
 
-	@MockBean
+	@MockitoBean
 	private IInterceptorService myInterceptorService;
 
 	/**
@@ -75,27 +75,27 @@ public class SubscriptionSubmitInterceptorLoaderTest {
 			return subscriptionSettings;
 		}
 
-		@MockBean
+		@MockitoBean
 		public IIdHelperService<JpaPid> myIdHelperService;
-		@MockBean
+		@MockitoBean
 		public StorageSettings myStorageSettings;
-		@MockBean
+		@MockitoBean
 		private ISearchParamProvider mySearchParamProvider;
-		@MockBean
+		@MockitoBean
 		private IValidationSupport myValidationSupport;
-		@MockBean
+		@MockitoBean
 		private SubscriptionChannelFactory mySubscriptionChannelFactory;
-		@MockBean
+		@MockitoBean
 		private DaoRegistry myDaoRegistry;
-		@MockBean
+		@MockitoBean
 		private IResourceVersionSvc myResourceVersionSvc;
-		@MockBean
+		@MockitoBean
 		private IRequestPartitionHelperSvc myRequestPartitionHelperSvc;
-		@MockBean
+		@MockitoBean
 		private PlatformTransactionManager myPlatformTransactionManager;
-		@MockBean
+		@MockitoBean
 		private IResourceModifiedMessagePersistenceSvc myResourceModifiedMessagePersistenceSvc;
-		@MockBean
+		@MockitoBean
 		private IHapiTransactionService myHapiTransactionService;
 
 	}

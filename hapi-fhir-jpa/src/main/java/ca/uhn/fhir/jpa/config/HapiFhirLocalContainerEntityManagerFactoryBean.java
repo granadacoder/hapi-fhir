@@ -37,8 +37,8 @@ import org.hibernate.id.SequenceMismatchStrategy;
 import org.hibernate.query.criteria.ValueHandlingMode;
 import org.hibernate.resource.jdbc.spi.PhysicalConnectionHandlingMode;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.orm.hibernate5.SpringBeanContainer;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.hibernate.SpringBeanContainer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
