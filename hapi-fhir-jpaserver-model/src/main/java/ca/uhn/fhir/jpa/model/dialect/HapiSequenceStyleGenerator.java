@@ -156,11 +156,6 @@ public class HapiSequenceStyleGenerator
 	}
 
 	@Override
-	public boolean supportsJdbcBatchInserts() {
-		return myGen.supportsJdbcBatchInserts();
-	}
-
-	@Override
 	public Optimizer getOptimizer() {
 		return myGen.getOptimizer();
 	}

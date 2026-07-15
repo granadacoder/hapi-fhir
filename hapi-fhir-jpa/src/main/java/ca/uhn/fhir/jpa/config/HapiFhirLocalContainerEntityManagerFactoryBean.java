@@ -82,7 +82,6 @@ public class HapiFhirLocalContainerEntityManagerFactoryBean extends LocalContain
 		retVal.putIfAbsent(BatchSettings.STATEMENT_BATCH_SIZE, "30");
 		retVal.putIfAbsent(BatchSettings.ORDER_INSERTS, "true");
 		retVal.putIfAbsent(BatchSettings.ORDER_UPDATES, "true");
-		retVal.putIfAbsent(BatchSettings.BATCH_VERSIONED_DATA, "true");
 		// Why is this here, you ask? LocalContainerEntityManagerFactoryBean actually clobbers the setting hibernate
 		// needs in order to be able to resolve beans, so we add it back in manually here
 		retVal.putIfAbsent(

@@ -700,7 +700,8 @@ public class JdbcUtils {
 
 				@Override
 				public IdentifierHelper getIdentifierHelper() {
-					return new NormalizingIdentifierHelperImpl(this, null, true, true, true, true, null, null, null);
+					return new NormalizingIdentifierHelperImpl(
+							this, null, true, true, true, true, false, null, null, null);
 				}
 
 				@Override
