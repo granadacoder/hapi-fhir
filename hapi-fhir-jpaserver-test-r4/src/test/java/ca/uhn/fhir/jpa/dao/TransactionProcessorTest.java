@@ -130,7 +130,7 @@ public class TransactionProcessorTest {
 	private NonTransactionalHapiTransactionService myHapiTransactionService;
 	@MockitoBean
 	private EntityManagerFactory myEntityManagerFactory;
-	@MockitoBean(answer = Answers.RETURNS_DEEP_STUBS)
+	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private EntityManager myEntityManager;
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private CriteriaBuilder myCriteriaBuilder;
@@ -156,7 +156,7 @@ public class TransactionProcessorTest {
 	private IResourceVersionSvc myResourceVersionSvc;
 	@MockitoBean
 	private SearchParamMatcher mySearchParamMatcher;
-	@MockitoBean(answer = Answers.RETURNS_DEEP_STUBS)
+	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private SessionImpl mySession;
 	@MockitoBean
 	private IFhirSystemDao<Bundle, Meta> mySystemDao;

@@ -183,6 +183,11 @@ public class SqlLoggerFilteringUtil {
 	}
 
 	@VisibleForTesting
+	public boolean isRefreshExecutorActiveForTests() {
+		return myRefreshExecutor != null && !myRefreshExecutor.isShutdown();
+	}
+
+	@VisibleForTesting
 	public static void setFilterUpdateIntervalSecs(int theFilterUpdateIntervalSecs) {
 		FILTER_UPDATE_INTERVAL_SECS = theFilterUpdateIntervalSecs;
 	}

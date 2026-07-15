@@ -29,6 +29,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -75,28 +76,60 @@ public class SubscriptionSubmitInterceptorLoaderTest {
 			return subscriptionSettings;
 		}
 
-		@MockitoBean
-		public IIdHelperService<JpaPid> myIdHelperService;
-		@MockitoBean
-		public StorageSettings myStorageSettings;
-		@MockitoBean
-		private ISearchParamProvider mySearchParamProvider;
-		@MockitoBean
-		private IValidationSupport myValidationSupport;
-		@MockitoBean
-		private SubscriptionChannelFactory mySubscriptionChannelFactory;
-		@MockitoBean
-		private DaoRegistry myDaoRegistry;
-		@MockitoBean
-		private IResourceVersionSvc myResourceVersionSvc;
-		@MockitoBean
-		private IRequestPartitionHelperSvc myRequestPartitionHelperSvc;
-		@MockitoBean
-		private PlatformTransactionManager myPlatformTransactionManager;
-		@MockitoBean
-		private IResourceModifiedMessagePersistenceSvc myResourceModifiedMessagePersistenceSvc;
-		@MockitoBean
-		private IHapiTransactionService myHapiTransactionService;
+		@Bean
+		IIdHelperService<JpaPid> idHelperService() {
+			return mock(IIdHelperService.class);
+		}
+
+		@Bean
+		StorageSettings storageSettings() {
+			return mock(StorageSettings.class);
+		}
+
+		@Bean
+		ISearchParamProvider searchParamProvider() {
+			return mock(ISearchParamProvider.class);
+		}
+
+		@Bean
+		IValidationSupport validationSupport() {
+			return mock(IValidationSupport.class);
+		}
+
+		@Bean
+		SubscriptionChannelFactory subscriptionChannelFactory() {
+			return mock(SubscriptionChannelFactory.class);
+		}
+
+		@Bean
+		DaoRegistry daoRegistry() {
+			return mock(DaoRegistry.class);
+		}
+
+		@Bean
+		IResourceVersionSvc resourceVersionSvc() {
+			return mock(IResourceVersionSvc.class);
+		}
+
+		@Bean
+		IRequestPartitionHelperSvc requestPartitionHelperSvc() {
+			return mock(IRequestPartitionHelperSvc.class);
+		}
+
+		@Bean
+		PlatformTransactionManager platformTransactionManager() {
+			return mock(PlatformTransactionManager.class);
+		}
+
+		@Bean
+		IResourceModifiedMessagePersistenceSvc resourceModifiedMessagePersistenceSvc() {
+			return mock(IResourceModifiedMessagePersistenceSvc.class);
+		}
+
+		@Bean
+		IHapiTransactionService hapiTransactionService() {
+			return mock(IHapiTransactionService.class);
+		}
 
 	}
 

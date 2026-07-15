@@ -58,6 +58,7 @@ public class HapiFhirLocalContainerEntityManagerFactoryBean extends LocalContain
 	public HapiFhirLocalContainerEntityManagerFactoryBean(
 			ConfigurableListableBeanFactory theConfigurableListableBeanFactory) {
 		myConfigurableListableBeanFactory = theConfigurableListableBeanFactory;
+		setEntityManagerFactoryInterface(EntityManagerFactory.class);
 	}
 
 	@Nonnull

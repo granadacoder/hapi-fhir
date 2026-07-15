@@ -337,14 +337,14 @@ public class BulkPatchProviderTest {
 	}
 
 	@ParameterizedTest
-	@CsvSource(delimiter = '#', textBlock = """
-		1|2|3       # {"allPartitions":false,"partitionIds":[1,2,3]}
-		1|  2   |3  # {"allPartitions":false,"partitionIds":[1,2,3]}
-		1|2|  | |3  # {"allPartitions":false,"partitionIds":[1,2,3]}
-		_ALL        # {"allPartitions":true}
-		_ALL|1      # {"allPartitions":true}
-		2|_ALL|1    # {"allPartitions":true}
-		FOO         # EX: HAPI-2820: Invalid partition ID: FOO
+	@CsvSource(delimiter = ';', textBlock = """
+		1|2|3       ; {"allPartitions":false,"partitionIds":[1,2,3]}
+		1|  2   |3  ; {"allPartitions":false,"partitionIds":[1,2,3]}
+		1|2|  | |3  ; {"allPartitions":false,"partitionIds":[1,2,3]}
+		_ALL        ; {"allPartitions":true}
+		_ALL|1      ; {"allPartitions":true}
+		2|_ALL|1    ; {"allPartitions":true}
+		FOO         ; EX: HAPI-2820: Invalid partition ID: FOO
 		""")
 	void testParsePartitionIdsParameter(String theValues, String theExpected) {
 		List<IPrimitiveType<String>> input = Arrays.stream(StringUtils.split(theValues, '|'))
