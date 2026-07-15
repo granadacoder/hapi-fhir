@@ -678,6 +678,11 @@ public class GiantTransactionPerfTest {
 		}
 
 		@Override
+		public <C, T> T callWithConnection(jakarta.persistence.ConnectionFunction<C, T> theConnectionFunction) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public FlushModeType getFlushMode() {
 			return FlushModeType.AUTO;
 		}

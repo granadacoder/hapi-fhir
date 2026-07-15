@@ -33,6 +33,7 @@ import org.hibernate.boot.model.relational.Database;
 import org.hibernate.boot.model.relational.ExportableProducer;
 import org.hibernate.boot.model.relational.SqlStringGenerationContext;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.generator.GeneratorCreationContext;
 import org.hibernate.id.BulkInsertionCapableIdentifierGenerator;
 import org.hibernate.id.IdentifierGenerator;
 import org.hibernate.id.OptimizableGenerator;
@@ -40,11 +41,16 @@ import org.hibernate.id.PersistentIdentifierGenerator;
 import org.hibernate.id.enhanced.Optimizer;
 import org.hibernate.id.enhanced.SequenceStyleGenerator;
 import org.hibernate.id.enhanced.StandardOptimizerDescriptor;
+import org.hibernate.mapping.Table;
+import org.hibernate.mapping.Value;
 import org.hibernate.service.ServiceRegistry;
 import org.hibernate.type.Type;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.Serializable;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.Properties;
 import java.util.function.Supplier;
 
@@ -117,6 +123,17 @@ public class HapiSequenceStyleGenerator
 	@Override
 	public void configure(Type theType, Properties theParams, ServiceRegistry theServiceRegistry)
 			throws MappingException {
+		configure(theType, theParams, theServiceRegistry, null);
+	}
+
+	@Override
+	public void configure(GeneratorCreationContext theContext, Properties theParams) throws MappingException {
+		configure(theContext.getType(), theParams, theContext.getServiceRegistry(), theContext);
+	}
+
+	private void configure(
+			Type theType, Properties theParams, ServiceRegistry theServiceRegistry, GeneratorCreationContext theContext)
+			throws MappingException {
 
 		myIdMassager = theServiceRegistry.getService(ISequenceValueMassager.class);
 		if (myIdMassager == null) {
@@ -140,13 +157,91 @@ public class HapiSequenceStyleGenerator
 		props.put(OptimizableGenerator.INCREMENT_PARAM, 50);
 		props.put(IdentifierGenerator.GENERATOR_NAME, myGeneratorName);
 
-		myGen.configure(theType, props, theServiceRegistry);
+		myGen.configure(
+				theContext != null ? theContext : createGeneratorCreationContext(theType, theServiceRegistry), props);
 
 		myConfigured = true;
 	}
 
+	private static GeneratorCreationContext createGeneratorCreationContext(
+			Type theType, ServiceRegistry theServiceRegistry) {
+		Value value = (Value) Proxy.newProxyInstance(
+				HapiSequenceStyleGenerator.class.getClassLoader(),
+				new Class<?>[] {Value.class},
+				new InvocationHandler() {
+					@Override
+					public Object invoke(Object theProxy, Method theMethod, Object[] theArgs) {
+						return switch (theMethod.getName()) {
+							case "getTable" -> new Table("HAPI_FHIR_SEQUENCE_GENERATOR");
+							case "getType" -> theType;
+							case "getServiceRegistry" -> theServiceRegistry;
+							case "isSimpleValue" -> true;
+							case "isValid" -> true;
+							case "isNullable" -> false;
+							case "hasColumns",
+									"hasFormula",
+									"isAlternateUniqueKey",
+									"isPartitionKey",
+									"hasAnyInsertableColumns",
+									"hasAnyUpdatableColumns" -> false;
+							default -> null;
+						};
+					}
+				});
+
+		return new GeneratorCreationContext() {
+			@Override
+			public org.hibernate.boot.model.relational.Database getDatabase() {
+				return null;
+			}
+
+			@Override
+			public ServiceRegistry getServiceRegistry() {
+				return theServiceRegistry;
+			}
+
+			@Override
+			public String getDefaultCatalog() {
+				return null;
+			}
+
+			@Override
+			public String getDefaultSchema() {
+				return null;
+			}
+
+			@Override
+			public org.hibernate.mapping.PersistentClass getPersistentClass() {
+				return null;
+			}
+
+			@Override
+			public org.hibernate.mapping.RootClass getRootClass() {
+				return null;
+			}
+
+			@Override
+			public org.hibernate.mapping.Property getProperty() {
+				return null;
+			}
+
+			@Override
+			public Value getValue() {
+				return value;
+			}
+
+			@Override
+			public Type getType() {
+				return theType;
+			}
+		};
+	}
+
 	@Override
 	public void registerExportables(Database database) {
+		if (!myConfigured) {
+			return;
+		}
 		myGen.registerExportables(database);
 	}
 
