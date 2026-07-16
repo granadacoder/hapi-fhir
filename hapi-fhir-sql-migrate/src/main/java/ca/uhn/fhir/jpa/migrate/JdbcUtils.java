@@ -29,7 +29,14 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.hibernate.boot.model.naming.Identifier;
 import org.hibernate.boot.model.relational.QualifiedSequenceName;
+import org.hibernate.dialect.CockroachDialect;
 import org.hibernate.dialect.Dialect;
+import org.hibernate.dialect.H2Dialect;
+import org.hibernate.dialect.MariaDBDialect;
+import org.hibernate.dialect.MySQLDialect;
+import org.hibernate.dialect.OracleDialect;
+import org.hibernate.dialect.PostgreSQLDialect;
+import org.hibernate.dialect.SQLServerDialect;
 import org.hibernate.engine.jdbc.dialect.internal.StandardDialectResolver;
 import org.hibernate.engine.jdbc.dialect.spi.DatabaseMetaDataDialectResolutionInfoAdapter;
 import org.hibernate.engine.jdbc.dialect.spi.DialectResolver;
@@ -418,6 +425,10 @@ public class JdbcUtils {
 
 	public static Set<String> getSequenceNames(DriverTypeEnum.ConnectionProperties theConnectionProperties)
 			throws SQLException {
+		if (theConnectionProperties.getDriverType() == DriverTypeEnum.DERBY_EMBEDDED) {
+			return getDerbySequenceNames(theConnectionProperties);
+		}
+
 		List<SequenceInformation> sequenceInformation = getSequenceInformation(theConnectionProperties);
 
 		return sequenceInformation.stream()
@@ -438,9 +449,12 @@ public class JdbcUtils {
 							DialectResolver dialectResolver = new StandardDialectResolver();
 							Dialect dialect = dialectResolver.resolveDialect(
 									new DatabaseMetaDataDialectResolutionInfoAdapter(connection.getMetaData()));
+							if (dialect == null) {
+								dialect = getDialect(theConnectionProperties.getDriverType());
+							}
 
 							List<SequenceInformation> sequenceInformation = new ArrayList<>();
-							if (dialect.getSequenceSupport().supportsSequences()) {
+							if (dialect != null && dialect.getSequenceSupport().supportsSequences()) {
 
 								// Use Hibernate to get a list of current sequences
 								SequenceInformationExtractor sequenceInformationExtractor =
@@ -455,6 +469,53 @@ public class JdbcUtils {
 							return sequenceInformation;
 						} catch (SQLException e) {
 							throw new InternalErrorException(Msg.code(39) + e);
+						}
+					}));
+		}
+	}
+
+	@Nullable
+	private static Dialect getDialect(DriverTypeEnum theDriverType) {
+		switch (theDriverType) {
+			case H2_EMBEDDED:
+				return new H2Dialect();
+			case DERBY_EMBEDDED:
+				return null;
+			case MARIADB_10_1:
+				return new MariaDBDialect();
+			case MYSQL_5_7:
+				return new MySQLDialect();
+			case POSTGRES_9_4:
+				return new PostgreSQLDialect();
+			case ORACLE_12C:
+				return new OracleDialect();
+			case MSSQL_2012:
+				return new SQLServerDialect();
+			case COCKROACHDB_21_1:
+				return new CockroachDialect();
+			default:
+				return null;
+		}
+	}
+
+	private static Set<String> getDerbySequenceNames(DriverTypeEnum.ConnectionProperties theConnectionProperties)
+			throws SQLException {
+		DataSource dataSource = Objects.requireNonNull(theConnectionProperties.getDataSource());
+		try (Connection connection = dataSource.getConnection()) {
+			return Objects.requireNonNull(
+					theConnectionProperties.getTxTemplate().execute(t -> {
+						try {
+							Set<String> sequenceNames = new HashSet<>();
+							try (ResultSet results = connection
+									.createStatement()
+									.executeQuery("select SEQUENCENAME from sys.syssequences")) {
+								while (results.next()) {
+									sequenceNames.add(results.getString(1).toUpperCase(Locale.US));
+								}
+							}
+							return sequenceNames;
+						} catch (SQLException e) {
+							throw new InternalErrorException(Msg.code(40) + e);
 						}
 					}));
 		}

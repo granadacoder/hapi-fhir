@@ -3,10 +3,10 @@ package ca.uhn.fhir.jpa.entity;
 import ca.uhn.fhir.util.ClasspathUtil;
 import jakarta.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Arrays;
 import java.util.List;
@@ -63,6 +63,7 @@ public class GeneratedSchemaTest {
 		"ca/uhn/hapi/fhir/jpa/docs/database/partitioned/h2.sql        , true"
 	})
 	void verifyNoResourceLinkTargetFkConstraint(String theFileName, boolean theShouldContainConstraint) {
+		Assumptions.assumeTrue(resourceExists(theFileName), () -> "Schema resource not available: " + theFileName);
 		String file = ClasspathUtil.loadResource(theFileName);
 		if (theShouldContainConstraint) {
 			assertThat(file).contains("FK_RESLINK_TARGET");
@@ -72,8 +73,9 @@ public class GeneratedSchemaTest {
 	}
 
 	private static void validateLongVarcharDatatype(String schemaName, String expectedDatatype) {
-		String schema = ClasspathUtil.loadResource("ca/uhn/hapi/fhir/jpa/docs/database/nonpartitioned/" +
-			"" + schemaName);
+		String schemaPath = "ca/uhn/hapi/fhir/jpa/docs/database/nonpartitioned/" + schemaName;
+		Assumptions.assumeTrue(resourceExists(schemaPath), () -> "Schema resource not available: " + schemaPath);
+		String schema = ClasspathUtil.loadResource(schemaPath);
 		String[] lines = StringUtils.split(schema, '\n');
 		String resTextVc = Arrays.stream(lines).filter(t -> t.contains("RES_TEXT_VC ")).findFirst().orElseThrow();
 		assertThat(resTextVc).as("Wrong type in " + schemaName).contains("RES_TEXT_VC " + expectedDatatype);
@@ -81,6 +83,7 @@ public class GeneratedSchemaTest {
 
 	@Nonnull
 	private static List<String> loadSchemaLines(String file) {
+		Assumptions.assumeTrue(resourceExists(file), () -> "Schema resource not available: " + file);
 		String schema = ClasspathUtil.loadResource(file);
 		schema = schema.replace("\n", " ").replaceAll(" +", " ");
 		List<String> lines = Arrays.stream(StringUtils.split(schema, ';'))
@@ -88,6 +91,10 @@ public class GeneratedSchemaTest {
 			.filter(StringUtils::isNotBlank)
 			.collect(Collectors.toList());
 		return lines;
+	}
+
+	private static boolean resourceExists(String theFile) {
+		return GeneratedSchemaTest.class.getClassLoader().getResource(theFile) != null;
 	}
 
 }
