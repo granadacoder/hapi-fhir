@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>ca.uhn.hapi.fhir</groupId>
 		<artifactId>hapi-deployable-pom</artifactId>
-		<version>8.11.16-SNAPSHOT</version>
+		<version>8.55.77-SNAPSHOT</version>
 
 		<relativePath>../hapi-deployable-pom/pom.xml</relativePath>
 	</parent>
@@ -540,6 +540,7 @@
 							<goal>generate-ddl</goal>
 						</goals>
 						<configuration>
+							<skip>true</skip>
 							<databasePartitionMode>false</databasePartitionMode>
 							<outputDirectory>${project.build.directory}/classes/ca/uhn/hapi/fhir/jpa/docs/database/nonpartitioned</outputDirectory>
 						</configuration>
@@ -551,6 +552,7 @@
 					<goal>generate-ddl</goal>
 				</goals>
 					<configuration>
+						<skip>true</skip>
 						<databasePartitionMode>true</databasePartitionMode>
 						<outputDirectory>${project.build.directory}/classes/ca/uhn/hapi/fhir/jpa/docs/database/partitioned</outputDirectory>
 					</configuration>
