@@ -134,6 +134,7 @@ import ca.uhn.fhir.util.TestUtil;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -236,7 +237,7 @@ public abstract class BaseJpaTest extends BaseTest {
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	protected ServletRequestDetails mySrd;
 	protected InterceptorService mySrdInterceptorService;
-	@Autowired
+	@Autowired(required = false)
 	protected IMdmLinkDao<JpaPid, MdmLink> myMdmLinkDao;
 	@Autowired
 	protected FhirContext myFhirContext;
@@ -504,11 +505,17 @@ public abstract class BaseJpaTest extends BaseTest {
 		PlatformTransactionManager txManager = getTxManager();
 		if (txManager instanceof JpaTransactionManager) {
 			JpaTransactionManager hibernateTxManager = (JpaTransactionManager) txManager;
-			SessionFactory sessionFactory = (SessionFactory) hibernateTxManager.getEntityManagerFactory();
+			EntityManagerFactory entityManagerFactory = hibernateTxManager.getEntityManagerFactory();
+			if (entityManagerFactory == null) {
+				return;
+			}
+			SessionFactory sessionFactory =
+					entityManagerFactory instanceof SessionFactory sessionFactoryFromEntityManagerFactory
+							? sessionFactoryFromEntityManagerFactory
+							: entityManagerFactory.unwrap(SessionFactory.class);
 			AtomicBoolean isReadOnly = new AtomicBoolean();
 			Session currentSession;
 			try {
-				assert sessionFactory != null;
 				currentSession = sessionFactory.getCurrentSession();
 			} catch (HibernateException e) {
 				currentSession = null;
@@ -606,12 +613,12 @@ public abstract class BaseJpaTest extends BaseTest {
 	}
 
 	protected int countAllMdmLinks() {
-		return runInTransaction(()-> myMdmLinkDao.findAll().size());
+		return runInTransaction(() -> requireMdmLinkDao().findAll().size());
 	}
 
 	protected int logAllMdmLinks() {
-		return runInTransaction(()->{
-			List<MdmLink> links = myMdmLinkDao.findAll();
+		return runInTransaction(() -> {
+			List<MdmLink> links = requireMdmLinkDao().findAll();
 			if (links.isEmpty()) {
 				ourLog.info("MDM Links: NONE");
 			} else {
@@ -619,6 +626,13 @@ public abstract class BaseJpaTest extends BaseTest {
 			}
 			return links.size();
 		});
+	}
+
+	private IMdmLinkDao<JpaPid, MdmLink> requireMdmLinkDao() {
+		if (myMdmLinkDao == null) {
+			throw new IllegalStateException("IMdmLinkDao bean is not available in this test context");
+		}
+		return myMdmLinkDao;
 	}
 
 	public void logAllResourceLinks() {

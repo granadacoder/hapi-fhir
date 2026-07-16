@@ -49,6 +49,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Properties;
@@ -157,10 +158,38 @@ public class HapiSequenceStyleGenerator
 		props.put(OptimizableGenerator.INCREMENT_PARAM, 50);
 		props.put(IdentifierGenerator.GENERATOR_NAME, myGeneratorName);
 
-		myGen.configure(
-				theContext != null ? theContext : createGeneratorCreationContext(theType, theServiceRegistry), props);
+		GeneratorCreationContext generatorCreationContext =
+				theContext != null ? theContext : createGeneratorCreationContext(theType, theServiceRegistry);
+		configureSequenceStyleGenerator(theType, theServiceRegistry, props, generatorCreationContext);
 
 		myConfigured = true;
+	}
+
+	private void configureSequenceStyleGenerator(
+			Type theType,
+			ServiceRegistry theServiceRegistry,
+			Properties theProperties,
+			GeneratorCreationContext theGeneratorCreationContext) {
+		try {
+			try {
+				Method configureWithContext = SequenceStyleGenerator.class.getMethod(
+						"configure", GeneratorCreationContext.class, Properties.class);
+				configureWithContext.invoke(myGen, theGeneratorCreationContext, theProperties);
+				return;
+			} catch (NoSuchMethodException e) {
+				// Hibernate ORM < 7.4 uses the legacy configure(Type, Properties, ServiceRegistry) signature.
+			}
+
+			Method configureLegacy = SequenceStyleGenerator.class.getMethod(
+					"configure", Type.class, Properties.class, ServiceRegistry.class);
+			configureLegacy.invoke(myGen, theType, theProperties, theServiceRegistry);
+		} catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+			Throwable cause = e instanceof InvocationTargetException ? e.getCause() : e;
+			if (cause instanceof RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			throw new MappingException("Failed to configure SequenceStyleGenerator", cause);
+		}
 	}
 
 	private static GeneratorCreationContext createGeneratorCreationContext(

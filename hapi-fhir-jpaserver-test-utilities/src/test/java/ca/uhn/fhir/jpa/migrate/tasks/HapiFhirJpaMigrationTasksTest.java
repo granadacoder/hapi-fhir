@@ -13,6 +13,7 @@ import jakarta.annotation.Nonnull;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
@@ -52,6 +53,7 @@ public class HapiFhirJpaMigrationTasksTest {
 
 	@Test
 	public void testCreate_NonPartitionedIds() throws SQLException {
+		Assumptions.assumeTrue(resourceExists("/ca/uhn/hapi/fhir/jpa/docs/database/nonpartitioned/h2.sql"));
 		HapiFhirJpaMigrationTasks tasks = new HapiFhirJpaMigrationTasks(Collections.emptySet());
 
 		HapiMigrator migrator = new HapiMigrator(MIGRATION_TABLE_NAME, myDataSource, DriverTypeEnum.H2_EMBEDDED);
@@ -69,6 +71,7 @@ public class HapiFhirJpaMigrationTasksTest {
 
 	@Test
 	public void testCreate_PartitionedIds() throws SQLException {
+		Assumptions.assumeTrue(resourceExists("/ca/uhn/hapi/fhir/jpa/docs/database/partitioned/h2.sql"));
 		HapiFhirJpaMigrationTasks tasks = new HapiFhirJpaMigrationTasks(Set.of(HapiFhirJpaMigrationTasks.FlagEnum.DB_PARTITION_MODE.getCommandLineValue()));
 
 		HapiMigrator migrator = new HapiMigrator(MIGRATION_TABLE_NAME, myDataSource, DriverTypeEnum.H2_EMBEDDED);
@@ -253,6 +256,10 @@ public class HapiFhirJpaMigrationTasksTest {
 		retVal.setMaxTotal(5);
 
 		return retVal;
+	}
+
+	private boolean resourceExists(String thePath) {
+		return HapiFhirJpaMigrationTasksTest.class.getResource(thePath) != null;
 	}
 
 }
