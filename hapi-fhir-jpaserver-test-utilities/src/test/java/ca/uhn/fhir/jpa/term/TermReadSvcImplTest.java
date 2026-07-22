@@ -10,6 +10,7 @@ import ca.uhn.fhir.context.support.ValidationSupportContext;
 import ca.uhn.fhir.jpa.api.config.JpaStorageSettings;
 import ca.uhn.fhir.jpa.dao.data.ITermCodeSystemDao;
 import ca.uhn.fhir.jpa.entity.TermCodeSystem;
+import ca.uhn.fhir.jpa.entity.TermConcept;
 import ca.uhn.hapi.converters.canonical.VersionCanonicalizer;
 import org.hl7.fhir.r4.model.CodeSystem;
 import org.junit.jupiter.api.Test;
@@ -27,10 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 
 // Created by claude-opus-4-7
 @ExtendWith(MockitoExtension.class)
@@ -77,26 +76,26 @@ class TermReadSvcImplTest {
 
 	static class ValidateCodeFixture {
 
-		final TermReadSvcImpl mySpiedSvc;
+		final StubbedTermReadSvcImpl mySvc;
 		final PlatformTransactionManager myTxManager;
 		final IValidationSupport myRootValidationSupport;
 		final ValidationSupportContext myValidationSupportContext;
 		final ITermCodeSystemDao myCodeSystemDao;
 
 		ValidateCodeFixture() {
-			mySpiedSvc = spy(new TermReadSvcImpl());
+			mySvc = new StubbedTermReadSvcImpl();
 			myTxManager = mock(PlatformTransactionManager.class);
 			myRootValidationSupport = mock(IValidationSupport.class);
 			myValidationSupportContext = new ValidationSupportContext(myRootValidationSupport);
 			myCodeSystemDao = mock(ITermCodeSystemDao.class);
 
 			FhirContext fhirContext = FhirContext.forR4Cached();
-			ReflectionTestUtils.setField(mySpiedSvc, "myTransactionManager", myTxManager);
-			ReflectionTestUtils.setField(mySpiedSvc, "myTxTemplate", new TransactionTemplate(myTxManager));
-			ReflectionTestUtils.setField(mySpiedSvc, "myContext", fhirContext);
-			ReflectionTestUtils.setField(mySpiedSvc, "myStorageSettings", new JpaStorageSettings());
-			ReflectionTestUtils.setField(mySpiedSvc, "myVersionCanonicalizer", new VersionCanonicalizer(fhirContext));
-			ReflectionTestUtils.setField(mySpiedSvc, "myCodeSystemDao", myCodeSystemDao);
+			ReflectionTestUtils.setField(mySvc, "myTransactionManager", myTxManager);
+			ReflectionTestUtils.setField(mySvc, "myTxTemplate", new TransactionTemplate(myTxManager));
+			ReflectionTestUtils.setField(mySvc, "myContext", fhirContext);
+			ReflectionTestUtils.setField(mySvc, "myStorageSettings", new JpaStorageSettings());
+			ReflectionTestUtils.setField(mySvc, "myVersionCanonicalizer", new VersionCanonicalizer(fhirContext));
+			ReflectionTestUtils.setField(mySvc, "myCodeSystemDao", myCodeSystemDao);
 
 			TransactionStatus status = new SimpleTransactionStatus();
 			lenient().when(myTxManager.getTransaction(any())).thenReturn(status);
@@ -113,7 +112,7 @@ class TermReadSvcImplTest {
 		}
 
 		void stubFindCodeEmpty() {
-			doReturn(Optional.empty()).when(mySpiedSvc).findCode(any(), any());
+			mySvc.myFindCodeReturnValue = Optional.empty();
 		}
 
 		void stubCodeSystemContent(CodeSystem.CodeSystemContentMode theContent) {
@@ -124,7 +123,7 @@ class TermReadSvcImplTest {
 		}
 
 		CodeValidationResult callValidateCode() {
-			return mySpiedSvc.validateCode(
+			return mySvc.validateCode(
 					myValidationSupportContext,
 					new ConceptValidationOptions(),
 					UCUM_SYSTEM_URL,
@@ -134,12 +133,21 @@ class TermReadSvcImplTest {
 		}
 
 		LookupCodeResult callLookupCode() {
-			return mySpiedSvc.lookupCode(
+			return mySvc.lookupCode(
 					myValidationSupportContext, new LookupCodeRequest(UCUM_SYSTEM_URL, UCUM_CODE));
 		}
 
 		void stubCodeSystemResource(org.hl7.fhir.instance.model.api.IBaseResource theResource) {
 			lenient().when(myRootValidationSupport.fetchCodeSystem(UCUM_SYSTEM_URL)).thenReturn(theResource);
+		}
+
+		static class StubbedTermReadSvcImpl extends TermReadSvcImpl {
+			Optional<TermConcept> myFindCodeReturnValue = Optional.empty();
+
+			@Override
+			public Optional<TermConcept> findCode(String theCodeSystem, String theCode) {
+				return myFindCodeReturnValue;
+			}
 		}
 	}
 
@@ -243,7 +251,7 @@ class TermReadSvcImplTest {
 
 		VersionCanonicalizer nullReturningCanonicalizer = mock(VersionCanonicalizer.class);
 		lenient().when(nullReturningCanonicalizer.codeSystemToCanonical(any())).thenReturn(null);
-		ReflectionTestUtils.setField(fixture.mySpiedSvc, "myVersionCanonicalizer", nullReturningCanonicalizer);
+		ReflectionTestUtils.setField(fixture.mySvc, "myVersionCanonicalizer", nullReturningCanonicalizer);
 
 		CodeValidationResult result = fixture.callValidateCode();
 

@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.ServletServerHttpRequest;
+import org.springframework.web.util.ForwardedHeaderUtils;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -71,14 +72,15 @@ import static java.util.Optional.ofNullable;
  *
  */
 public class ApacheProxyAddressStrategy extends IncomingRequestAddressStrategy {
+
 	private static final Logger LOG = LoggerFactory.getLogger(ApacheProxyAddressStrategy.class);
 
 	private final boolean useHttps;
 
 	/**
 	 * @param useHttps
-	 *            Is used when the {@code x-forwarded-proto} is not set in the
-	 *            request.
+	 *          Is used when the {@code x-forwarded-proto} is not set in the
+	 *          request.
 	 */
 	public ApacheProxyAddressStrategy(boolean useHttps) {
 		this.useHttps = useHttps;
@@ -88,10 +90,17 @@ public class ApacheProxyAddressStrategy extends IncomingRequestAddressStrategy {
 	public String determineServerBase(ServletContext servletContext, HttpServletRequest request) {
 		String serverBase = super.determineServerBase(servletContext, request);
 		ServletServerHttpRequest requestWrapper = new ServletServerHttpRequest(request);
-		UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpRequest(requestWrapper);
+
+		// Spring 7 removed UriComponentsBuilder.fromHttpRequest(HttpRequest);
+		// forwarded-header adaptation now lives on ForwardedHeaderUtils and
+		// operates on the request's URI + headers directly.
+		UriComponentsBuilder uriBuilder =
+				ForwardedHeaderUtils.adaptFromForwardedHeaders(requestWrapper.getURI(), requestWrapper.getHeaders());
 		uriBuilder.replaceQuery(null);
+
 		HttpHeaders headers = requestWrapper.getHeaders();
 		adjustSchemeWithDefault(uriBuilder, headers);
+
 		return forwardedServerBase(serverBase, headers, uriBuilder);
 	}
 
@@ -111,16 +120,20 @@ public class ApacheProxyAddressStrategy extends IncomingRequestAddressStrategy {
 	private String forwardedServerBase(
 			String originalServerBase, HttpHeaders headers, UriComponentsBuilder uriBuilder) {
 		Optional<String> forwardedPrefix = getForwardedPrefix(headers);
+
 		LOG.debug("serverBase: {}, forwardedPrefix: {}", originalServerBase, forwardedPrefix);
 		LOG.debug("request header: {}", headers);
 
 		String path = forwardedPrefix.orElseGet(() -> pathFrom(originalServerBase));
 		uriBuilder.replacePath(path);
+
 		return uriBuilder.build().toUriString();
 	}
 
 	private String pathFrom(String serverBase) {
-		UriComponents build = UriComponentsBuilder.fromHttpUrl(serverBase).build();
+		// Spring 7 removed UriComponentsBuilder.fromHttpUrl(String) in favor of
+		// fromUriString(String), which now handles both http(s) and generic URIs.
+		UriComponents build = UriComponentsBuilder.fromUriString(serverBase).build();
 		return StringUtils.defaultIfBlank(build.getPath(), "");
 	}
 

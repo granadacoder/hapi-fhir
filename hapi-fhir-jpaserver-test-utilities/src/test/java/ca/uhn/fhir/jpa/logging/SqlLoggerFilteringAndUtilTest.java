@@ -308,13 +308,12 @@ public class SqlLoggerFilteringAndUtilTest {
 
 
 		private void assertExecutorState(boolean isActive) {
-			int beforeRefreshCount = SqlLoggerFilteringUtil.getRefreshCountForTests();
 			if (isActive) {
-				await().atMost(Duration.of(FILTER_UPDATE_INTERVAL_SECS + 1, ChronoUnit.SECONDS)).until(() -> beforeRefreshCount < SqlLoggerFilteringUtil.getRefreshCountForTests());
+				await().atMost(Duration.of(FILTER_UPDATE_INTERVAL_SECS + 1, ChronoUnit.SECONDS))
+						.until(() -> mySpiedUtil.isRefreshExecutorActiveForTests());
 			} else {
-				waitForRefreshCycle();
-				int newCount = SqlLoggerFilteringUtil.getRefreshCountForTests();
-				assertEquals(beforeRefreshCount, newCount);
+				await().atMost(Duration.of(FILTER_UPDATE_INTERVAL_SECS + 1, ChronoUnit.SECONDS))
+						.until(() -> !mySpiedUtil.isRefreshExecutorActiveForTests());
 			}
 		}
 

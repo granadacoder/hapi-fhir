@@ -65,7 +65,6 @@ public class HapiFhirHibernateJpaDialect extends HibernateJpaDialect {
 		return theException;
 	}
 
-	@Override
 	protected DataAccessException convertHibernateAccessException(@Nonnull HibernateException theException) {
 		return convertHibernateAccessException(theException, null);
 	}
@@ -108,7 +107,7 @@ public class HapiFhirHibernateJpaDialect extends HibernateJpaDialect {
 							theException);
 				}
 				if (constraintName.contains(ResourceSearchUrlEntity.RES_SEARCH_URL_COLUMN_NAME)) {
-					throw super.convertHibernateAccessException(theException);
+					throw super.translateExceptionIfPossible(theException);
 				}
 			}
 
@@ -145,7 +144,7 @@ public class HapiFhirHibernateJpaDialect extends HibernateJpaDialect {
 			}
 		}
 
-		DataAccessException retVal = super.convertHibernateAccessException(theException);
+		DataAccessException retVal = super.translateExceptionIfPossible(theException);
 		return retVal;
 	}
 

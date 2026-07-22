@@ -37,8 +37,8 @@ import org.hibernate.id.SequenceMismatchStrategy;
 import org.hibernate.query.criteria.ValueHandlingMode;
 import org.hibernate.resource.jdbc.spi.PhysicalConnectionHandlingMode;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.orm.hibernate5.SpringBeanContainer;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.hibernate.SpringBeanContainer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,6 +58,7 @@ public class HapiFhirLocalContainerEntityManagerFactoryBean extends LocalContain
 	public HapiFhirLocalContainerEntityManagerFactoryBean(
 			ConfigurableListableBeanFactory theConfigurableListableBeanFactory) {
 		myConfigurableListableBeanFactory = theConfigurableListableBeanFactory;
+		setEntityManagerFactoryInterface(EntityManagerFactory.class);
 	}
 
 	@Nonnull
@@ -81,7 +82,6 @@ public class HapiFhirLocalContainerEntityManagerFactoryBean extends LocalContain
 		retVal.putIfAbsent(BatchSettings.STATEMENT_BATCH_SIZE, "30");
 		retVal.putIfAbsent(BatchSettings.ORDER_INSERTS, "true");
 		retVal.putIfAbsent(BatchSettings.ORDER_UPDATES, "true");
-		retVal.putIfAbsent(BatchSettings.BATCH_VERSIONED_DATA, "true");
 		// Why is this here, you ask? LocalContainerEntityManagerFactoryBean actually clobbers the setting hibernate
 		// needs in order to be able to resolve beans, so we add it back in manually here
 		retVal.putIfAbsent(

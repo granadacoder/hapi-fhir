@@ -21,7 +21,7 @@ import org.hl7.fhir.dstu2.model.Subscription;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
@@ -29,6 +29,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -43,7 +44,7 @@ public class SubscriptionSubmitInterceptorLoaderTest {
 	@Autowired
 	private SubscriptionMatcherInterceptor mySubscriptionMatcherInterceptor;
 
-	@MockBean
+	@MockitoBean
 	private IInterceptorService myInterceptorService;
 
 	/**
@@ -75,28 +76,60 @@ public class SubscriptionSubmitInterceptorLoaderTest {
 			return subscriptionSettings;
 		}
 
-		@MockBean
-		public IIdHelperService<JpaPid> myIdHelperService;
-		@MockBean
-		public StorageSettings myStorageSettings;
-		@MockBean
-		private ISearchParamProvider mySearchParamProvider;
-		@MockBean
-		private IValidationSupport myValidationSupport;
-		@MockBean
-		private SubscriptionChannelFactory mySubscriptionChannelFactory;
-		@MockBean
-		private DaoRegistry myDaoRegistry;
-		@MockBean
-		private IResourceVersionSvc myResourceVersionSvc;
-		@MockBean
-		private IRequestPartitionHelperSvc myRequestPartitionHelperSvc;
-		@MockBean
-		private PlatformTransactionManager myPlatformTransactionManager;
-		@MockBean
-		private IResourceModifiedMessagePersistenceSvc myResourceModifiedMessagePersistenceSvc;
-		@MockBean
-		private IHapiTransactionService myHapiTransactionService;
+		@Bean
+		IIdHelperService<JpaPid> idHelperService() {
+			return mock(IIdHelperService.class);
+		}
+
+		@Bean
+		StorageSettings storageSettings() {
+			return mock(StorageSettings.class);
+		}
+
+		@Bean
+		ISearchParamProvider searchParamProvider() {
+			return mock(ISearchParamProvider.class);
+		}
+
+		@Bean
+		IValidationSupport validationSupport() {
+			return mock(IValidationSupport.class);
+		}
+
+		@Bean
+		SubscriptionChannelFactory subscriptionChannelFactory() {
+			return mock(SubscriptionChannelFactory.class);
+		}
+
+		@Bean
+		DaoRegistry daoRegistry() {
+			return mock(DaoRegistry.class);
+		}
+
+		@Bean
+		IResourceVersionSvc resourceVersionSvc() {
+			return mock(IResourceVersionSvc.class);
+		}
+
+		@Bean
+		IRequestPartitionHelperSvc requestPartitionHelperSvc() {
+			return mock(IRequestPartitionHelperSvc.class);
+		}
+
+		@Bean
+		PlatformTransactionManager platformTransactionManager() {
+			return mock(PlatformTransactionManager.class);
+		}
+
+		@Bean
+		IResourceModifiedMessagePersistenceSvc resourceModifiedMessagePersistenceSvc() {
+			return mock(IResourceModifiedMessagePersistenceSvc.class);
+		}
+
+		@Bean
+		IHapiTransactionService hapiTransactionService() {
+			return mock(IHapiTransactionService.class);
+		}
 
 	}
 
