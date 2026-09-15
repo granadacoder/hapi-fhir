@@ -1,7 +1,6 @@
 package ca.uhn.fhir.jpa.mdm.dao;
 
 import ca.uhn.fhir.jpa.api.dao.DaoRegistry;
-import ca.uhn.fhir.jpa.config.HapiFhirLocalContainerEntityManagerFactoryBean;
 import ca.uhn.fhir.jpa.dao.data.IMdmLinkJpaMetricsRepository;
 import ca.uhn.fhir.jpa.dao.mdm.MdmMetricSvcJpaImpl;
 import ca.uhn.fhir.jpa.entity.MdmLink;
@@ -17,8 +16,8 @@ import ca.uhn.fhir.jpa.model.dao.JpaPid;
 import ca.uhn.fhir.mdm.api.IMdmMetricSvc;
 import ca.uhn.fhir.mdm.model.MdmMetrics;
 import ca.uhn.fhir.mdm.util.MdmResourceUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 import jakarta.persistence.EntityManagerFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Patient;
@@ -51,27 +50,21 @@ public class MdmMetricSvcJpaIT extends BaseMdmR4Test implements IMdmMetricSvcTes
 		private IMdmLinkJpaMetricsRepository myJpaRepository;
 
 		@Autowired
-		private DaoRegistry myDaoRegistry;
-
-		@Autowired
 		private EntityManagerFactory myEntityManagerFactory;
-
-		@Autowired
-		private HapiFhirLocalContainerEntityManagerFactoryBean myEntityFactory;
 
 		// this has to be provided via spring, or the
 		// @Transactional barrier is never invoked
 		@Bean
-		IMdmMetricSvc mdmMetricSvc() {
+		IMdmMetricSvc mdmMetricSvc(DaoRegistry theDaoRegistry) {
 			return new MdmMetricSvcJpaImpl(
 				myJpaRepository,
-				myDaoRegistry,
+				theDaoRegistry,
 				myEntityManagerFactory
 			);
 		}
 	}
 
-	private final ObjectMapper myObjectMapper = new ObjectMapper();
+	private final JsonMapper myJsonMapper = new JsonMapper();
 
 	@Autowired
 	private MdmLinkHelper myLinkHelper;
@@ -164,8 +157,8 @@ public class MdmMetricSvcJpaIT extends BaseMdmR4Test implements IMdmMetricSvcTes
 	@Override
 	public String getStringMetrics(MdmMetrics theMetrics) {
 		try {
-			return myObjectMapper.writeValueAsString(theMetrics);
-		} catch (JsonProcessingException ex) {
+			return myJsonMapper.writeValueAsString(theMetrics);
+		} catch (JacksonException ex) {
 			// we've failed anyway - we might as well display the exception
 			fail(ex);
 			return "NOT PARSEABLE!";

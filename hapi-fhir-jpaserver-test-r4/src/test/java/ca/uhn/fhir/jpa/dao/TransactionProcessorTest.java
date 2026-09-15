@@ -63,6 +63,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -175,6 +176,8 @@ public class TransactionProcessorTest {
 
 	@BeforeEach
 	void before() {
+		myDaoRegistry.unregisterAll();
+
 		myTransactionProcessor.setEntityManagerForUnitTest(myEntityManager);
 		when(myEntityManager.unwrap(eq(Session.class))).thenReturn(mySession);
 
@@ -185,6 +188,7 @@ public class TransactionProcessorTest {
 		when(myPatientDao.getResourceType()).thenReturn(Patient.class);
 		when(myPatientDao.getContext()).thenReturn(myFhirContext);
 		myDaoRegistry.register(myPatientDao);
+		myDaoRegistry.register(mySystemDao);
 	}
 
 	@AfterEach
@@ -367,6 +371,39 @@ public class TransactionProcessorTest {
 		assertEquals(PATIENT_MATCH_URL_FOO_123_HASH, myLongCaptor.getValue());
 	}
 
+	/**
+	 * The If-None-Exist header may legally omit the resource type — {@code identifier=...}, the form the FHIR
+	 * specification itself shows, or {@code ?identifier=...} — since the type is implied by the entry. A
+	 * type-less conditional create must be pre-fetched exactly like the type-qualified form: the same single
+	 * batched token-hash query.
+	 */
+	// Created by Claude Fable 5
+	@ParameterizedTest
+	@ValueSource(strings = {PATIENT_MATCH_URL_FOO_123, "identifier=http://foo|123", "?identifier=http://foo|123"})
+	public void testPreFetch_ConditionalCreate_typelessIfNoneExistPrefetchedLikeQualified(String theIfNoneExist) {
+		// Setup
+		when(myPartitionSettings.isPartitioningEnabled()).thenReturn(true);
+		when(myRequestPartitionHelperSvc.determineCreatePartitionForRequest(any(), any(), any())).thenReturn(RequestPartitionId.fromPartitionId(100));
+		when(myRequestPartitionHelperSvc.determineReadPartitionForRequestForSearchType(any(), any(), any(), any())).thenReturn(RequestPartitionId.fromPartitionId(100));
+
+		BundleBuilder bb = new BundleBuilder(myFhirContext);
+		bb.addTransactionCreateEntry(new Patient().setActive(true)).conditional(theIfNoneExist);
+		Bundle input = bb.getBundleTyped();
+
+		when(myInMemoryResourceMatcher.canBeEvaluatedInMemory(any())).thenReturn(InMemoryMatchResult.unsupportedFromReason("Foo"));
+
+		mockPreFetchHashCapture();
+		mockPatientDaoCreate();
+
+		// Test
+		myTransactionProcessor.transaction(newSrd(), input, false);
+
+		// Verify
+		verify(myEntityManager, times(1)).createQuery(anyCriteriaQuery());
+		verify(myCriteriaBuilder, times(1)).equal(any(), myLongCaptor.capture());
+		assertEquals(PATIENT_MATCH_URL_FOO_123_HASH, myLongCaptor.getValue());
+	}
+
 	@Test
 	public void testPreFetch_ConditionalUpdate_IncludePayloadInPartitionRequest() {
 		// Setup
@@ -543,9 +580,7 @@ public class TransactionProcessorTest {
 
 		@Bean
 		public DaoRegistry daoRegistry() {
-			DaoRegistry retVal = new DaoRegistry(fhirContext());
-			retVal.setResourceDaos(List.of());
-			return retVal;
+			return new DaoRegistry(fhirContext());
 		}
 
 		@Bean
